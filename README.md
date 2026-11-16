@@ -1,4 +1,4 @@
-poste-restante
+# Poste-Restante
 
 Disposable email inboxes for test automation, on Cloudflare.
 
