@@ -1,0 +1,69 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "qa-email-worker",
+  "main": "src/index.ts",
+  // Keep in step with the miniflare bundled by @cloudflare/vitest-plugin;
+  // a date newer than it supports fails the local test runtime.
+  "compatibility_date": "2026-11-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": true,
+
+  "observability": {
+    "enabled": true,
+    "logs": { "enabled": true, "invocation_logs": true }
+  },
+
+  "kv_namespaces": [
+    {
+      "binding": "QA_MAIL",
+      // Replace with the id printed by:
+      //   npx wrangler kv namespace create QA_MAIL
+      "id": "REPLACE_WITH_KV_NAMESPACE_ID"
+    }
+  ],
+
+  // One Durable Object per inbox, used only to push arrival notifications so
+  // /wait does not have to poll KV. SQLite-backed because that is the class
+  // available on the Workers Free plan; the object stores nothing.
+  "durable_objects": {
+    "bindings": [{ "name": "INBOX_NOTIFIER", "class_name": "InboxNotifier" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["InboxNotifier"] }],
+
+  "vars": {
+    // Domain this inbox serves. Used only for logging/validation messages.
+    "MAIL_DOMAIN": "sodality.chat",
+
+    // How long a received message is retained before KV expires it (seconds).
+    // KV enforces a 60s minimum. 86400 = 24h.
+    "RETENTION_SECONDS": "86400",
+
+    // Refuse to parse anything larger than this (bytes). Oversized mail is
+    // recorded as a metadata-only stub so the test can still see it arrived.
+    "MAX_EMAIL_BYTES": "5242880",
+
+    // text/html bodies are truncated to this many characters before storage.
+    "MAX_BODY_CHARS": "262144",
+
+    // Attachments under this size are stored base64 in the message record.
+    // 0 = never store attachment bytes (filename/type/size are always kept).
+    "STORE_ATTACHMENT_MAX_BYTES": "0",
+
+    // Upper bound a client may request on a single GET /wait (seconds). Longer
+    // waits are chained client-side; each window costs ~2 KV list operations.
+    "MAX_WAIT_SECONDS": "60",
+
+    // Cap on MIME parts per message. Inbound mail is attacker-controlled.
+    "MAX_MIME_PARTS": "200",
+
+    // Optional JS regex tested against the recipient address. Empty = accept
+    // every address on the domain (true catch-all). Example: "^qa-.*"
+    "ALLOWED_RECIPIENT_PATTERN": "",
+
+    // debug | info | warn | error
+    "LOG_LEVEL": "info"
+  }
+
+  // API_TOKEN is a secret, not a var:
+  //   npx wrangler secret put API_TOKEN
+}

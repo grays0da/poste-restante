@@ -1,0 +1,24 @@
+{
+  "name": "qa-email-worker",
+  "version": "0.3.0",
+  "private": true,
+  "description": "Disposable QA inbox on Cloudflare Email Workers + KV, with a bearer-auth REST API and push-notified long-poll.",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "tail": "wrangler tail --format pretty"
+  },
+  "dependencies": {
+    "postal-mime": "^4.2.1"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-plugin": "^1.8.3",
+    "@cloudflare/workers-types": "^5.20260827.1",
+    "typescript": "^5.9.0",
+    "vitest": "^4.1.0",
+    "wrangler": "^4.127.0"
+  }
+}
